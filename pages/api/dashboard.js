@@ -2,7 +2,7 @@ import { readSheet } from '../../lib/sheets';
 
 export default async function handler(req, res) {
   try {
-    const rows = await readSheet('Dashboard', 'C5:H5');
+    const rows = await readSheet('Dashboard', 'B5:G5');
     const row = rows[0] || [];
     res.json({
       revenue: row[0] || '0',
