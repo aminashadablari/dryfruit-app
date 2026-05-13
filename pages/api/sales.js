@@ -11,6 +11,7 @@ export default async function handler(req, res) {
           goods: r[4], qty: r[5], revenue: r[6], apartment: r[7],
           avgCost: r[8], cogs: r[9], payment: r[10],
         }));
+      .sort((a, b) => (a.customer || '').localeCompare(b.customer || '')); // ← add this line
       res.json(data);
     } catch (e) { res.status(500).json({ error: e.message }); }
   }
