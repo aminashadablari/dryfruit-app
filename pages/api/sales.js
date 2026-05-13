@@ -3,7 +3,7 @@ import { readSheet, appendRow } from '../../lib/sheets';
 export default async function handler(req, res) {
   if (req.method === 'GET') {
     try {
-      const rows = await readSheet('Sales Register', 'A4:K60');
+      const rows = await readSheet('Sales Register', 'A4:K6');
       const data = rows
         .filter(r => r[0])
         .map(r => ({
