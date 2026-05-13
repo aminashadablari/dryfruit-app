@@ -45,9 +45,9 @@ export default function Sales() {
   };
 
   // FIX: sort A→Z by customer name instead of reverse()
-  const sortedSales = [...sales].sort((a, b) =>
-    (a.customer || '').trim().localeCompare((b.customer || '').trim())
-  );
+ const sortedSales = [...sales].sort((a, b) =>
+  new Date(a.date) - new Date(b.date)
+);
 
   return (
     <div>
