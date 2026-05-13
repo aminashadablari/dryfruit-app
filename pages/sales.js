@@ -11,10 +11,16 @@ export default function Sales() {
   const [form, setForm] = useState({ date: today(), customer: '', phone: '', goods: '', qty: '', revenue: '', apartment: '', payment: 'UPI' });
 
   useEffect(() => {
-    Promise.all([
-      fetch('/api/sales').then(r => r.json()),
-      fetch('/api/prices').then(r => r.json()),
-    ]).then(([s, p]) => { setSales(s); setPrices(p); setLoading(false); });
+    // FIX: fetch independently so a prices failure doesn't block sales from showing
+    fetch('/api/sales')
+      .then(r => r.json())
+      .then(s => { setSales(s); setLoading(false); })
+      .catch(() => setLoading(false));
+
+    fetch('/api/prices')
+      .then(r => r.json())
+      .then(p => setPrices(p))
+      .catch(() => {});
   }, []);
 
   const goodsOptions = [...new Set(prices.map(p => p.goods))];
@@ -37,6 +43,11 @@ export default function Sales() {
     }
     setSaving(false);
   };
+
+  // FIX: sort A→Z by customer name instead of reverse()
+  const sortedSales = [...sales].sort((a, b) =>
+    (a.customer || '').trim().localeCompare((b.customer || '').trim())
+  );
 
   return (
     <div>
@@ -97,12 +108,12 @@ export default function Sales() {
               </tr>
             </thead>
             <tbody>
-              {[...sales].reverse().map((s, i) => (
+              {sortedSales.map((s, i) => (
                 <tr key={i}>
-                  <td>{s.id}</td><td>{s.date}</td>
+                  <td>{i + 1}</td><td>{s.date}</td>
                   <td>{s.customer}<br /><span style={{ fontSize: '0.7rem', color: '#64748b' }}>{s.phone}</span></td>
                   <td>{s.goods}</td><td>{s.qty} kg</td>
-                  <td style={{ color: '#16c4ab', fontWeight: 600 }}>₹{s.revenue}</td>
+                  <td style={{ color: '#16c4ab', fontWeight: 600 }}>{s.revenue}</td>
                   <td>{s.apartment}</td>
                   <td><span className="badge badge-blue">{s.payment}</span></td>
                 </tr>
