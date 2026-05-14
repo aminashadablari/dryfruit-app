@@ -4,19 +4,29 @@ const today = () => new Date().toISOString().split('T')[0];
 
 export default function Sales() {
   const [sales, setSales] = useState([]);
+  const [totals, setTotals] = useState(null);
   const [prices, setPrices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [form, setForm] = useState({ date: today(), customer: '', phone: '', goods: '', qty: '', revenue: '', apartment: '', payment: 'UPI' });
+  const [form, setForm] = useState({
+    date: today(), customer: '', phone: '', goods: '',
+    qty: '', revenue: '', apartment: '', payment: 'UPI'
+  });
 
-  useEffect(() => {
-    // FIX: fetch independently so a prices failure doesn't block sales from showing
+  const loadSales = () => {
     fetch('/api/sales')
       .then(r => r.json())
-      .then(s => { setSales(s); setLoading(false); })
+      .then(({ data, totals }) => {
+        setSales(data);
+        setTotals(totals);
+        setLoading(false);
+      })
       .catch(() => setLoading(false));
+  };
 
+  useEffect(() => {
+    loadSales();
     fetch('/api/prices')
       .then(r => r.json())
       .then(p => setPrices(p))
@@ -34,20 +44,22 @@ export default function Sales() {
   const handleSubmit = async () => {
     if (!form.customer || !form.goods || !form.qty) return alert('Please fill all required fields');
     setSaving(true);
-    const res = await fetch('/api/sales', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(form) });
+    const res = await fetch('/api/sales', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(form)
+    });
     if (res.ok) {
-      const updated = await fetch('/api/sales').then(r => r.json());
-      setSales(updated);
       setForm({ date: today(), customer: '', phone: '', goods: '', qty: '', revenue: '', apartment: '', payment: 'UPI' });
       setShowForm(false);
+      loadSales();
+    } else {
+      alert('Failed to save. Try again.');
     }
     setSaving(false);
   };
 
-  // FIX: sort A→Z by customer name instead of reverse()
- const sortedSales = [...sales].sort((a, b) =>
-  new Date(a.date) - new Date(b.date)
-);
+  const sortedSales = [...sales].sort((a, b) => new Date(a.date) - new Date(b.date));
 
   return (
     <div>
@@ -98,7 +110,9 @@ export default function Sales() {
         </div>
       )}
 
-      {loading ? <div style={{ color: '#64748b', textAlign: 'center', padding: '2rem' }}>Loading...</div> : (
+      {loading ? (
+        <div style={{ color: '#64748b', textAlign: 'center', padding: '2rem' }}>Loading...</div>
+      ) : (
         <div className="card" style={{ overflowX: 'auto' }}>
           <table>
             <thead>
@@ -110,9 +124,11 @@ export default function Sales() {
             <tbody>
               {sortedSales.map((s, i) => (
                 <tr key={i}>
-                  <td>{i + 1}</td><td>{s.date}</td>
+                  <td>{i + 1}</td>
+                  <td>{s.date}</td>
                   <td>{s.customer}<br /><span style={{ fontSize: '0.7rem', color: '#64748b' }}>{s.phone}</span></td>
-                  <td>{s.goods}</td><td>{s.qty} kg</td>
+                  <td>{s.goods}</td>
+                  <td>{s.qty} kg</td>
                   <td style={{ color: '#16c4ab', fontWeight: 600 }}>{s.revenue}</td>
                   <td>{s.apartment}</td>
                   <td><span className="badge badge-blue">{s.payment}</span></td>
@@ -120,6 +136,24 @@ export default function Sales() {
               ))}
             </tbody>
           </table>
+
+          {totals && (
+            <div style={{
+              display: 'flex', justifyContent: 'flex-end', gap: '2rem',
+              padding: '0.75rem 1.25rem', marginTop: '0.5rem',
+              borderTop: '2px solid #16c4ab',
+              background: '#0f2137', borderRadius: '0 0 8px 8px'
+            }}>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>TOTAL QTY</div>
+                <div style={{ fontWeight: 700, color: '#e2e8f0' }}>{totals.qty} kg</div>
+              </div>
+              <div style={{ textAlign: 'right' }}>
+                <div style={{ fontSize: '0.7rem', color: '#64748b', marginBottom: 2 }}>TOTAL REVENUE</div>
+                <div style={{ fontWeight: 700, color: '#16c4ab', fontSize: '1rem' }}>₹{totals.revenue}</div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>
