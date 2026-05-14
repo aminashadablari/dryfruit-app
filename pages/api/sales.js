@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     try {
       const rows = await readSheet('Sales Register', 'A4:K1000');
       const data = rows
-        .filter(r => r[0])
+        .filter(r => r[1])
         .map(r => ({
           id: r[0], date: r[1], customer: r[2], phone: r[3],
           goods: r[4], qty: r[5], revenue: r[6],
@@ -18,7 +18,8 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const { date, customer, phone, goods, qty, revenue, apartment, payment } = req.body;
-      await appendRow('Sales Register', [
+     const formatted = new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+     await appendRow('Sales Register', [
         '',         // A — # (serial, leave blank)
         date,       // B — Date
         customer,   // C — Customer Name
