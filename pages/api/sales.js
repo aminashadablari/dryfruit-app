@@ -5,7 +5,7 @@ export default async function handler(req, res) {
     try {
       const rows = await readSheet('Sales Register', 'A4:K1000');
       const data = rows
-        .filter(r => r[1] && r[2])
+        .filter(r => r[1] && r[2] && r[2].trim() !== '')
         .map(r => ({
           id: r[0], date: r[1], customer: r[2], phone: r[3],
           goods: r[4], qty: r[5], revenue: r[6],
@@ -21,12 +21,12 @@ export default async function handler(req, res) {
     try {
       const { date, customer, phone, goods, qty, revenue, apartment, payment } = req.body;
 
-      // Fix 1: date format
+      // Date format fix
       const [year, month, day] = date.split('-');
       const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
       const formatted = `${parseInt(day)}-${monthNames[parseInt(month)-1]}-${year.slice(2)}`;
 
-      // Fix 2: auto-increment # column
+      // Auto-increment # column
       const existingRows = await readSheet('Sales Register', 'A4:A1000');
       const lastNum = existingRows.filter(r => r[0] && !isNaN(r[0])).length;
       const nextNum = lastNum + 1;
