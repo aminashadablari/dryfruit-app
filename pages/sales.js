@@ -9,6 +9,7 @@ export default function Sales() {
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [form, setForm] = useState({
     date: today(), customer: '', phone: '', goods: '',
     qty: '', revenue: '', apartment: '', payment: 'UPI'
@@ -41,22 +42,56 @@ export default function Sales() {
     setForm(f => ({ ...f, goods, qty: qty || f.qty, revenue }));
   };
 
+  const handleEdit = (s) => {
+    setEditingId(s.rowIndex);
+    setForm({
+      date: s.date, customer: s.customer, phone: s.phone || '',
+      goods: s.goods, qty: s.qty, revenue: s.revenue,
+      apartment: s.apartment || '', payment: s.payment || 'UPI'
+    });
+    setShowForm(true);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleDelete = async (s) => {
+    if (!confirm(`Delete sale for ${s.customer} (${s.goods})? This cannot be undone.`)) return;
+    const res = await fetch('/api/sales', {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rowIndex: s.rowIndex })
+    });
+    if (res.ok) {
+      loadSales();
+    } else {
+      alert('Failed to delete. Try again.');
+    }
+  };
+
   const handleSubmit = async () => {
     if (!form.customer || !form.goods || !form.qty) return alert('Please fill all required fields');
     setSaving(true);
+    const method = editingId !== null ? 'PUT' : 'POST';
+    const body = editingId !== null ? { ...form, rowIndex: editingId } : form;
     const res = await fetch('/api/sales', {
-      method: 'POST',
+      method,
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(form)
+      body: JSON.stringify(body)
     });
     if (res.ok) {
       setForm({ date: today(), customer: '', phone: '', goods: '', qty: '', revenue: '', apartment: '', payment: 'UPI' });
       setShowForm(false);
+      setEditingId(null);
       loadSales();
     } else {
       alert('Failed to save. Try again.');
     }
     setSaving(false);
+  };
+
+  const handleCancel = () => {
+    setShowForm(false);
+    setEditingId(null);
+    setForm({ date: today(), customer: '', phone: '', goods: '', qty: '', revenue: '', apartment: '', payment: 'UPI' });
   };
 
   const sortedSales = [...sales].sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -68,12 +103,14 @@ export default function Sales() {
           <h1 style={{ fontSize: '1.2rem', fontWeight: 700, fontFamily: 'Georgia,serif' }}>Sales Register</h1>
           <p style={{ fontSize: '0.75rem', color: '#64748b' }}>{sales.length} transactions</p>
         </div>
-        <button className="btn-primary" onClick={() => setShowForm(!showForm)}>+ Add Sale</button>
+        <button className="btn-primary" onClick={() => { setEditingId(null); setShowForm(!showForm); }}>+ Add Sale</button>
       </div>
 
       {showForm && (
         <div className="card" style={{ marginBottom: '1.25rem' }}>
-          <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#16c4ab' }}>New Sale</h3>
+          <h3 style={{ fontSize: '0.9rem', marginBottom: '1rem', color: '#16c4ab' }}>
+            {editingId !== null ? 'Edit Sale' : 'New Sale'}
+          </h3>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: '0.75rem' }}>
             <div><label>Date *</label><input type="date" value={form.date} onChange={e => setForm(f => ({ ...f, date: e.target.value }))} /></div>
             <div><label>Customer Name *</label><input value={form.customer} onChange={e => setForm(f => ({ ...f, customer: e.target.value }))} placeholder="Name" /></div>
@@ -104,8 +141,10 @@ export default function Sales() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: 8, marginTop: '1rem' }}>
-            <button className="btn-primary" onClick={handleSubmit} disabled={saving}>{saving ? 'Saving...' : 'Save Sale'}</button>
-            <button className="btn-ghost" onClick={() => setShowForm(false)}>Cancel</button>
+            <button className="btn-primary" onClick={handleSubmit} disabled={saving}>
+              {saving ? 'Saving...' : editingId !== null ? 'Update Sale' : 'Save Sale'}
+            </button>
+            <button className="btn-ghost" onClick={handleCancel}>Cancel</button>
           </div>
         </div>
       )}
@@ -118,7 +157,7 @@ export default function Sales() {
             <thead>
               <tr>
                 <th>#</th><th>Date</th><th>Customer</th><th>Goods</th>
-                <th>Qty</th><th>Revenue</th><th>Apartment</th><th>Payment</th>
+                <th>Qty</th><th>Revenue</th><th>Apartment</th><th>Payment</th><th></th>
               </tr>
             </thead>
             <tbody>
@@ -132,6 +171,18 @@ export default function Sales() {
                   <td style={{ color: '#16c4ab', fontWeight: 600 }}>{s.revenue}</td>
                   <td>{s.apartment}</td>
                   <td><span className="badge badge-blue">{s.payment}</span></td>
+                  <td>
+                    <div style={{ display: 'flex', gap: 6 }}>
+                      <button onClick={() => handleEdit(s)} style={{
+                        background: 'none', border: '1px solid #334155', borderRadius: 4,
+                        color: '#94a3b8', cursor: 'pointer', padding: '2px 8px', fontSize: '0.75rem'
+                      }}>✏️</button>
+                      <button onClick={() => handleDelete(s)} style={{
+                        background: 'none', border: '1px solid #334155', borderRadius: 4,
+                        color: '#f87171', cursor: 'pointer', padding: '2px 8px', fontSize: '0.75rem'
+                      }}>🗑️</button>
+                    </div>
+                  </td>
                 </tr>
               ))}
             </tbody>
