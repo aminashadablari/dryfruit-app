@@ -1,4 +1,4 @@
-import { readSheet, updateCell } from '../../lib/sheets';
+import { readSheet, updateCell, appendRow } from '../../lib/sheets';
 
 export default async function handler(req, res) {
   if (req.method === 'GET') {
@@ -15,6 +15,14 @@ export default async function handler(req, res) {
     try {
       const { rowIndex, price } = req.body;
       await updateCell('Selling Price Master', `D${rowIndex}`, [[price]]);
+      res.json({ success: true });
+    } catch (e) { res.status(500).json({ error: e.message }); }
+  }
+
+  if (req.method === 'POST') {
+    try {
+      const { goods, unit, price } = req.body;
+      await appendRow('Selling Price Master', ['', goods, unit, price]);
       res.json({ success: true });
     } catch (e) { res.status(500).json({ error: e.message }); }
   }
