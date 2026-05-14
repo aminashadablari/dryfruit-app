@@ -22,7 +22,9 @@ export default async function handler(req, res) {
   if (req.method === 'POST') {
     try {
       const { date, customer, phone, goods, qty, revenue, apartment, payment } = req.body;
-      const formatted = new Date(date).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: '2-digit' });
+      const [year, month, day] = date.split('-');
+      const monthNames = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+      const formatted = `${parseInt(day)}-${monthNames[parseInt(month)-1]}-${year.slice(2)}`;
       await appendRow('Sales Register', [
         '',         // A — #
         formatted,  // B — Date
