@@ -16,7 +16,7 @@ export default function Login() {
     if (res.ok) {
       router.push('/')
     } else {
-      setError('Wrong password. Try again.')
+      setError('Bewkoof!! Wrong password. Try again.')
     }
   }
 
