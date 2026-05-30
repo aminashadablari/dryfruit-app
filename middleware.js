@@ -1,14 +1,16 @@
 import { NextResponse } from 'next/server'
 
 export function middleware(request) {
-  const cookie = request.cookies.get('app-password')?.value
+  const { pathname } = request.nextUrl
 
-  if (cookie === process.env.APP_PASSWORD) {
+  // Don't protect API routes or the login page
+  if (pathname.startsWith('/api') || pathname === '/login') {
     return NextResponse.next()
   }
 
-  const { pathname } = request.nextUrl
-  if (pathname === '/login') {
+  const cookie = request.cookies.get('app-password')?.value
+
+  if (cookie === process.env.APP_PASSWORD) {
     return NextResponse.next()
   }
 
